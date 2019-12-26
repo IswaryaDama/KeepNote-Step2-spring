@@ -1,11 +1,83 @@
 package com.stackroute.keepnote.controller;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.stackroute.keepnote.dao.NoteDAO;
+import com.stackroute.keepnote.model.Note;
+
 /*
  * Annotate the class with @Controller annotation.@Controller annotation is used to mark 
  * any POJO class as a controller so that Spring can recognize this class as a Controller
  */
-
+@Controller
 public class NoteController {
+	
+	@Autowired
+	private NoteDAO noteDao;
+			
+	public NoteController(NoteDAO noteDao) {
+		super();
+		this.noteDao = noteDao;
+	}
+
+	@RequestMapping(value="/")
+	public String getAllNotes(Model model)
+	{
+		List<Note> notelist = noteDao.getAllNotes();
+		model.addAttribute("noteList", notelist);
+		return "index";
+	}
+	
+	@RequestMapping(value="add",method=RequestMethod.POST)
+	public String addNote(Model model,@ModelAttribute("note")Note note) {
+		System.out.println("inside add method");
+		Note noteobj = new Note();
+		List<Note> notes = noteDao.getAllNotes();
+		noteobj.setNoteContent(note.getNoteContent());
+		noteobj.setNoteStatus(note.getNoteStatus());
+		noteobj.setNoteTitle(note.getNoteTitle());
+		noteobj.setCreatedAt(LocalDateTime.now());
+		Boolean status = noteDao.saveNote(noteobj);
+		if(status) {
+			//notes = noteDao.getAllNotes();
+			return "redirect:/"; 
+			
+		}
+		
+		model.addAttribute("noteList", notes);
+		return "index";
+	}
+	
+	@RequestMapping(value="/delete", method=RequestMethod.GET)
+	public String deleteNote(@RequestParam int noteId,Model model) {
+		List<Note> notes = noteDao.getAllNotes();
+		model.addAttribute("noteList", notes);
+		Boolean status=noteDao.deleteNote(noteId);
+		if(status) {
+			return "redirect:/";
+		}
+		return "index";
+	}
+	
+	@RequestMapping(value="/update",method=RequestMethod.POST)
+	public String updateNote(@ModelAttribute("note")Note note,Model model)
+	{  // Note note = noteDao.getNoteById(noteId);
+	    note.setNoteContent("Update test cases for NoteController");
+		noteDao.UpdateNote(note);
+		return "redirect:/";
+	}
 	/*
 	 * From the problem statement, we can understand that the application requires
 	 * us to implement the following functionalities.
